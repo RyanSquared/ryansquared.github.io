@@ -14,6 +14,10 @@ not* a reason to *ever* attack someone personally, and even though I
 disagree with the decisions made, it is never right to contact those people
 with harmful intent.
 
+![An inescapable hell of networking, pipes, cyberpunk, vaporwave, brutalist](/assets/images/2022/09/an-inescapable-hell-of-networking-hero.png)
+
+Image generated from Stable Diffusion: An inescapable hell of networking, pipes, cyberpunk, vaporwav, brutaliste
+
 If you've interacted with the Cloud Native Computing Foundation, you may be
 familiar with the [CNCF Landscape]. Beware - opening that link *might* crash
 your computer because of how many assets it has to load. Most of these projects
