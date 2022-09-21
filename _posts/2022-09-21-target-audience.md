@@ -2,7 +2,11 @@
 layout: post
 title: Target Audience
 tags: meta
+date: 2022-09-21 19:43 -0400
 ---
+![empty park around a pond with autumn trees, clear water, stone retaining wall](/assets/images/2022/09/target-audience-hero.png)
+
+Image generated from Stable Diffusion: empty park around a pond with autumn trees, clear water, stone retaining wall
 
 Perhaps I need to start considering what I want out of my blog, and who I want
 to direct my posts towards. Sometimes, I want my blog posts to feel like
@@ -29,11 +33,14 @@ but in parallel I think I'm going to try writing out similar things in my blog,
 in a way that I think people might also be more willing to read.
 
 That brings us to what I suppose the point of this article is: the target
-audience (which is actually my working title). I don't really know who I want
-to write this blog for, all I know is I want to write it. Getting my thoughts
-out there seems like a good way to both ensure that I have the ability to
-retain the things I've learned and to help others learn more about the topics
-that I want to help teach people about, while also being able to put a bit of
-my personality into it.
+audience. I don't really know who I want to write this blog for, all I know is
+I want to write it. Getting my thoughts out there seems like a good way to both
+ensure that I have the ability to retain the things I've learned and to help
+others learn more about the topics that I want to help teach people about,
+while also being able to put a bit of my personality into it.
+
+I suppose I should thank you, regardless of whether you're my target audience
+or the audience that I've ended up with, for continuing to read on this far.
+
 
 [book]: https://github.com/hashbang/book
