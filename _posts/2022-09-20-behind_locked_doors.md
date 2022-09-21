@@ -9,6 +9,9 @@ more about Qubes and how I can adapt my home-built SSH solution to be on par
 with the provided SSH solution. I hope to keep the structure of the post
 mostly consistent.
 
+![A locked chamber, imposing, cyberpunk, vaporwave](/assets/images/2022/09/behind-locked-doors-hero.png)
+Image generated from Stable Diffusion: A locked chamber, imposing, cyberpunk, vaporwave
+
 Recently, I've started using an operating system at work called [QubesOS]. The
 operating system is pretty fancy, it gives me a way to separate all of my
 applications into little environment-specific containers. It's very useful as a
