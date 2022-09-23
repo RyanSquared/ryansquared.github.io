@@ -2,8 +2,8 @@
 layout: post
 title: An Inescapable Hell of Networking
 tags: kubernetes, cni, networking
+date: 2022-09-23 05:05 -0400
 ---
-
 **Note:** The choices I've made are my own and are solely due to how I want to
 learn more about the involved technology. Kubernetes is not the "answer to
 everything", but it is the answer to "what do I think would be fun to learn?".
@@ -14,9 +14,10 @@ not* a reason to *ever* attack someone personally, and even though I
 disagree with the decisions made, it is never right to contact those people
 with harmful intent.
 
-![An inescapable hell of networking, pipes, cyberpunk, vaporwave, brutalist](/assets/images/2022/09/an-inescapable-hell-of-networking-hero.png)
+![An inescapable hell of networking, city block, cyberpunk, vaporwave, sharp focus, 1980s toyota supra](/assets/images/2022/09/an-inescapable-hell-of-networking-hero.png)
 
-Image generated from Stable Diffusion: An inescapable hell of networking, pipes, cyberpunk, vaporwav, brutaliste
+Image generated from Waifu Diffusion: An inescapable hell of networking, city
+block, cyberpunk, vaporwave, sharp focus, 1980s toyota supra
 
 If you've interacted with the Cloud Native Computing Foundation, you may be
 familiar with the [CNCF Landscape]. Beware - opening that link *might* crash
@@ -97,10 +98,53 @@ alternative to deploying the CNI. This seemed like a good plan and, given I
 didn't want to be stuck in hell forever, I decided to start working on
 something similar.
 
-<!-- TODO: Deploy the CNI using the Helm charts -->
+Progress was slow over the past week, but today I had joined the meeting
+with a fresh pair of eyes and a determination to finally drag myself out of
+this mess. While normally I would use terminal applications to navigate a local
+copy of the project I was using, during the last meeting I was given a link to
+something directly in the repository - the aforementioned Helm chart, stuffed
+into an internal directory, never to be seen again. Going back to my local
+repository, I noticed that there were newer tags available than what I was
+using, so I quickly updated to a new version of the repository, and noticed
+something sent from the angels to pull me up from hell: the latest tag had
+moved the Helm chart from the internal location to an easily accessible
+`charts` directory.
+
+Using the tool [khelm], I was able to render a Helm chart of the Calico project
+with some reasonably sane defaults: use BPF, deploy some additional components
+in case I'll use them later, and use Calico without any additional layer such
+as Flannel. With the resulting YAML file, I was able to yoink out individual
+parts and put them into their own reasonably named collection of resources in
+the Kustomization I had created for the project. After that, I was able to
+build the Calico manifests locally and deploy to the Kubernetes cluster. The
+results were less than ideal: as a DaemonSet had been left in CrashLoopBackoff
+and all the other pods were stuck Pending, I noticed two essential missing
+value in the Calico ConfigMap: a hostname and port pair. Because the BPF
+interoperability affected the way `kube-proxy` worked, the CNI pods were not
+able to route to the Kubernetes server, and had to be configured with a manual
+address.
+
+This leads to probably my least favorite component of the system I've designed.
+While most of the resources can be deployed without hardcoding any kind of
+option, and most options can be reused between clusters, there's no *good* way
+that I saw to create a ConfigMap component that could hold the connection
+information for my cluster. I instead had to hack a `kubeconfig` file out of my
+Talos configuration - removing the ability to easily merge it later - and use a
+null resource to provision the ConfigMap. However, once it was all completed,
+the cluster was once again rebuilt. Loading up `k9s -c nodes`, I was able to
+see a list of Nodes reporting that they were Ready, which meant that the CNI
+was up and correctly working.
+
+And so I ascend from hell. For now.
+
+![A winged demon clawing their way up from hell, pulling its way through a pile of computers, anime aesthetic, sharp focus](/assets/images/2022/09/clawing-up-from-hell-footer.png)
+
+Image generated from Waifu Diffusion: A winged demon clawing their way up from
+hell, pulling its way through a pile of computers, anime aesthetic, sharp focus
 
 [CNCF Landscape]: https://landscape.cncf.io/
 [catch on fire]: https://www.reuters.com/article/us-france-ovh-fire/-idUSKBN2B20NU
 [NetworkPolicy]: https://kubernetes.io/docs/concepts/services-networking/network-policies/
 [OSI]: https://en.wikipedia.org/wiki/OSI_model
 [Kubesail]: https://kubesail.com/
+[khelm]: https://github.com/mgoltzsche/khelm
