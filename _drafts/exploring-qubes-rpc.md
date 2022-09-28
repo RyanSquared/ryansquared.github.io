@@ -187,7 +187,7 @@ automatically configure the SSH agent:
 export SSH_AUTH_SOCK="${XDG_RUNTIME_DIR:-/run/user/`id -u`}/ssh/S.ssh-agent"
 ```
 
-### Improving the User Experience
+### Improving the user experience
 
 The split GPG setup has a convenient section of code that can automatically
 prompt whether or not a qube can access the SSH qube. While I'm not going to
@@ -196,3 +196,83 @@ entirely without modification for your own uses. Figuring out how to make the
 `/var/run` directory writable is an exercise left to the reader, because I'm
 tired and would be completely fine with sharing auth sessions between SSH and
 GPG if it means I can go to bed.
+
+### A remote password store
+
+A vault qube typically has no network access but for this use case we'll allow
+outbound traffic (via sys-firewall) on port 22. We also assume that the
+TemplateVM used for the vault qube has installed `pass` and `dmenu`.
+
+To start off with, we can create a policy to get the password list from the
+vault qube:
+
+```bash
+#!/usr/bin/env bash
+# /etc/qubes-rpc/pass.ListPasswords
+
+shopt -s nullglob globstar
+
+prefix=${PASSWORD_STORE_DIR-~/.password-store}
+password_files=( "$prefix"/**/*.gpg )
+password_files=( "${password_files[@]#"$prefix"/}" )
+password_files=( "${password_files[@]%.gpg}" )
+
+printf '%s\n' "${password_files[@]}"
+```
+
+The executable bit should be set for the command, which can be done by using
+`chmod +x /etc/qubes-rpc/pass.ListPasswords`. Once this is done, the TemplateVM
+can be shut down and the vault qube can be restarted to apply changes. Then, we
+need to create an RPC policy:
+
+```sh
+echo "@anyvm vault allow" > /etc/qubes-rpc/policy/pass.ListPasswords
+```
+
+This will act as a way to send our password list to a program that can help us
+choose a password, such as `dmenu`:
+
+```sh
+qrexec-client-vm vault pass.ListPasswords | dmenu
+# Note: Sometimes with qrexec-client-vm, you can leave off the pipe and it'll
+# pipe directly to the command. This can't work here, since qrexe-client-vm
+# eats the output of the command.
+# Example output: github.com
+```
+
+Now that we have a password chosen, we need to build an RPC command to show the
+command:
+
+```sh
+#!/bin/sh
+# /etc/qubes-rpc/pass.ShowPassword
+
+read password
+pass show "$password" 2>/dev/null
+```
+
+Once the executable bit has been set, the TemplateVM has been shut down, and
+the policy has been created, we can test this out by running:
+
+```sh
+qrexec-client-vm vault pass.GetPassword github.com
+```
+
+We can design a shell script to automatically link these components together
+and copy the password to the keyboard, by making use of the `clip` function in
+`/usr/bin/pass`, which I won't include in my snippet for licensing reasons.
+
+```sh
+#!/usr/bin/env bash
+# $HOME/bin/passmenu
+
+BASE64=base64
+X_SELECTION="${PASSWORD_STORE_X_SELECTION:-clipboard}"
+CLIP_TIME="${PASSWORD_STORE_CLIP_TIME:-45}"
+QUBE="${QUBES_PASS_DOMAIN:-$QUBES_GPG_DOMAIN}"
+
+# Omitted: `clip` snippet
+
+password="$(qrexec-client-vm $QUBE pass.ListPasswords | dmenu)"
+clip "$(qrexec-client-vm $QUBE pass.GetPassword <<<"$password")" "$password"
+```
