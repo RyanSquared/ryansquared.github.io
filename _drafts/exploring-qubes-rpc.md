@@ -245,9 +245,10 @@ command:
 
 ```sh
 #!/bin/sh
-# /etc/qubes-rpc/pass.ShowPassword
+# /etc/qubes-rpc/pass.GetPassword
 
 read password
+notify-send -t 5000 "[$(qubesdb-read /name)] Attempt to decrypt password from: $QREXEC_REMOTE_DOMAIN" "Password: $password"
 pass show "$password" 2>/dev/null
 ```
 
