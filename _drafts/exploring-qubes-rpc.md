@@ -73,7 +73,7 @@ command that:
 #!/bin/sh -eu
 
 export SSH_AUTH_SOCK="/run/user/`id -u`/gnupg/S.gpg-agent.ssh"
-test -f "$SSH_AUTH_SOCK"
+test -S "$SSH_AUTH_SOCK"
 notify-send -t 5000 "[$(qubesdb-read /name)] SSH access from: $QREXEC_REMOTE_DOMAIN"
 socat - "UNIX-CONNECT:$SSH_AUTH_SOCK"
 ```
