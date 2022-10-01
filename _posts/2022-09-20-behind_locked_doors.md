@@ -163,7 +163,7 @@ signature is tied to an origin. Therefore, if I have a WebAuthn setup
 configured for `github.com`, `guthib.com` can't spoof it because they'd *also*
 make the device believe that it's requesting a signature for `github.com`.
 
-A friend of mine recently [blogged about 2FA methods](xe-push-2fa-c-h). It's an
+A friend of mine recently [blogged about 2FA methods][xe-push-2fa-c-h]. It's an
 interesting read that I think gives a good oversight into how the entire
 security ecosystem relies on the possibility of human mistake. SMS and TOTP 2FA
 are phishable by not having *anything* tied to the domain name, while
