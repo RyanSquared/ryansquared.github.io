@@ -59,6 +59,13 @@ RPC invocation command. Once a TemplateVM has been updated and has successfully
 shut down, any AppVMs that use the TemplateVM can be restarted to receive the
 configured changes.
 
+I recommend creating several copies of the Debian 11 TemplateVM, never
+modifying the original. This means we can create a `user` TemplateVM (which can
+be used for Personal, Work, etc. qubes), a `vault` TemplateVM (whose sole
+purpose is to be used by vault), and keep `debian-11` pure. If you ever want to
+make a new copy, you can either copy the `debian-11` TemplateVM or a separate
+TemplateVM you've already created.
+
 ### The RPC command
 
 First, we must create a file containing the command that should be executed
