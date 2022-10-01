@@ -87,6 +87,11 @@ The executable bit should be set for the command, which can be done by using
 `chmod +x /etc/qubes-rpc/qubes.Ssh`. Once this is done, the TemplateVM can be
 shut down and the vault qube can be restarted to apply changes.
 
+We also need to make sure that `scdaemon` is installed, as it is not
+automatically installed in (at least) Qubes 4.1.1's Debian 11 tepmlate. This
+can be done by running `sudo apt install -y scdaemon` in the TemplateVM used by
+the vault qube.
+
 ### Enabling the RPC policy
 
 To allow usage of the RPC command, we must specify a policy file in the `dom0`
