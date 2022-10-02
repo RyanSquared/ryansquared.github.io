@@ -1,7 +1,12 @@
 ---
 layout: post
 title: Exploring Qubes RPC
+tags: qubes, gnupg, openpgp, ssh, webauthn, security
+date: 2022-10-02 01:41 -0400
 ---
+![A locked chamber, imposing, cyberpunk, vaporwave, cyan, high-resolution, sharp-focus, light-bloom-effect](/assets/images/2022/10/exploring-qubes-rpc-hero.png)
+
+Image generated from Waifu Diffusion: A locked chamber, imposing, cyberpunk, vaporwave, cyan, high-resolution, sharp-focus, light-bloom-effect
 
 In one of my previous blog posts, I discussed how I configured my system to use
 qubes-rpc to enable running `gpg-agent` in a single qube, restricting access to

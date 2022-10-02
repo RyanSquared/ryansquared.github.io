@@ -2,6 +2,7 @@
 layout: post
 title: Behind Locked Doors
 tags: qubes, gnupg, openpgp, ssh, webauthn, security
+last-edited: 2022-10-02 01:40 -0400
 date: 2022-09-20 19:41 -0400
 ---
 **Foreword:** This blog post will likely change as time goes on and I learn
@@ -68,89 +69,15 @@ your GPG key to the system, and run `qubes-gpg-client-wrapper -K` to ensure you
 have access to the private key.
 
 While the Qubes team offers an out-of-the-box option for GnuPG and OpenPGP
-operations, their support for SSH is less than ideal. For SSH operations, I
-will be working off an [adapted version] of the [community Split SSH] guide.
-While the setup for the GPG configuration didn't involve much tinkering with
-the system, we do need to run some commands for `dom0`, `vault`, and the
-TemplateVM that I plan on using for other qubes.
-
-### dom0
-
-Run the following command to give access to all VMs to use SSH.  You can use
-`ask,default_target=vault` instead of `allow` if you'd like a popup before the
-SSH operation is allowed to continue.
-
-```sh
-echo "@anyvm vault allow" | sudo tee /etc/qubes-rpc/policy/qubes.Ssh
-```
-
-### Vault's TemplateVM
-
-Place the following in `/etc/qubes-rpc/qubes.Ssh`:
-
-```sh
-#!/bin/sh
-
-export SSH_AUTH_SOCK=/run/user/1000/gnupg/S.gpg-agent.ssh
-notify-send "[$(qubesdb-read /name)] SSH access from: $QREXEC_REMOTE_DOMAIN"
-socat - "UNIX-CONNECT:$SSH_AUTH_SOCK"
-```
-
-And enable the executable flag:
-
-```sh
-chmod +x /etc/qubes-rpc/qubes.Ssh
-```
-
-### AppVM's TemplateVM
-
-**Note:** This section could probably ~~be trivialized with the use of
-generics~~ exist outside of `/rw/config/rc.local` but the original guide used
-that location. It could also make use of a similar "allow for timeframe" system
-that the gpg vault does, but it was usable so I just moved on.
-
-Note that if you have something in this file already, it should be merged in
-with this configuration manually, not completely replaced like I'm doing here.
-This is mostly designed as "self documentation" for whenever I set up a new
-Qubes system.
-
-Place the following in `/rw/config/rc.local`:
-
-```sh
-#!/bin/sh
-
-# This script will be executed at every VM startup, you can place your own
-# custom commands here. This includes overriding some configuration in /etc,
-# starting services etc.
-
-# Example for overriding the whole CUPS configuration:
-#  rm -rf /etc/cups
-#  ln -s /rw/config/cups /etc/cups
-#  systemctl --no-block restart cups
-SSH_VAULT_VM=vault
-USER_ID=1000
-USER_NAME=`id -nu $USER_ID`
-SSH_AUTH_SOCK="/home/$USER_NAME/.ssh/S.ssh-agent"
-
-if [ ! "$SSH_VAULT_VM" = "" ]; then
-  sudo -u "$USER_NAME" mkdir -p "$(dirname $SSH_AUTH_SOCK)" 2>/tmp/output
-  rm -f "$SSH_AUTH_SOCK"
-  sudo -u "$USER_NAME" /bin/sh -c "umask 177 && exec socat 'UNIX-LISTEN:$SSH_AUTH_SOCK,fork' 'EXEC:qrexec-client-vm $SSH_VAULT_VM qubes.Ssh'" &
-fi
-```
-
-And this in your shell's rc or env file:
-
-```sh
-export SSH_AUTH_SOCK="$HOME/.ssh/S.gpg-agent"
-```
-
-After restarting your TemplateVMs, Vault, and the AppVM you're using for
-testing, you should be able to run `ssh-add -L` and get a notification popup.
+operations, their support for SSH is less than ideal. In a previous version of
+this article, I included an [adapted version] of the [community Split SSH]
+guide, but I now have [a post detailing an improved version][improved-ssh].
 
 <!-- TODO: this section isn't the best. Please add more information about U2F
 and WebAuthn, and what they do to protect your privacy compared to TOTP and SMS
 2FA. -->
+
+# WebAuthn
 
 I also followed the instructions for the [Qubes U2F Proxy] to the letter to
 get a WebAuthn workflow working to the same device I have attached for PGP and
@@ -187,3 +114,4 @@ least hear that it's not just me.
 [Qubes U2F Proxy]: https://www.qubes-os.org/doc/u2f-proxy/
 [FIDO Alliance]: https://fidoalliance.org/
 [xe-push-2fa-c-h]: https://xeiaso.net/blog/push-2fa-considered-harmful
+[improved-ssh]: /2022/10/02/exploring-qubes-rpc.html
