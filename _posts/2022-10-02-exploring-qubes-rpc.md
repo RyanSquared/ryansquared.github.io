@@ -370,4 +370,4 @@ password_name="$(qrexec-client-vm $QUBE pass.ListPasswords | dmenu)"
 clip "$(qrexec-client-vm $QUBE pass.GetPassword <<<"$password_name")" "$password_name"
 ```
 
-[qubes-gpg-client-source]: https://github.com/QubesOS/qubes-app-linux-split-gpg/blob/fa04403e049f1d5b27975fdc8651c4740b302680/gpg-client-wrapper#L159-L163
+[qubes-gpg-client-source]: https://github.com/QubesOS/qubes-app-linux-split-gpg/blob/fa04403e049f1d5b27975fdc8651c4740b302680/gpg-client-wrapper#L326-L331
