@@ -39,10 +39,10 @@ qubes-gpg-client-wrapper --recv-keys 88823A75ECAA786B0FF38B148E401478A3FBEF72
 qubes-gpg-client-wrapper --export-secret-keys
 ```
 
-We can look at the source code of `qubes-gpg-client` (which I won't include for
-licensing reasons, just in case) and see that it calls `qrexec-client-vm` with
-a remote domain and a policy name. As an example of how `qrexec-client-vm`
-works, we can run the following command:
+We can look at the [source code][qubes-gpg-client-source] of `qubes-gpg-client`
+and see that it calls `qrexec-client-vm` with a remote domain and a policy
+name. As an example of how `qrexec-client-vm` works, we can run the following
+command:
 
 ```sh
 qrexec-client-vm vault qubes.GetDate
@@ -207,12 +207,60 @@ export SSH_AUTH_SOCK="${XDG_RUNTIME_DIR:-/run/user/`id -u`}/ssh/S.ssh-agent"
 ### Improving the user experience
 
 The split GPG setup has a convenient section of code that can automatically
-prompt whether or not a qube can access the SSH qube. While I'm not going to
-post that code snippet here (for licensing reasons), it can be copied almost
-entirely without modification for your own uses. Figuring out how to make the
-`/var/run` directory writable is an exercise left to the reader, because I'm
-tired and would be completely fine with sharing auth sessions between SSH and
-GPG if it means I can go to bed.
+prompt whether or not a qube can access the SSH qube. We can modify it and use
+it in our qubes-rpc service file to create an interface for approving SSH
+keyring access:
+
+```sh
+#!/bin/sh
+# License: https://github.com/QubesOS/qubes-app-linux-split-gpg/blob/fa04403e049f1d5b27975fdc8651c4740b302680/debian/copyright
+# Source: https://github.com/QubesOS/qubes-app-linux-split-gpg/blob/fa04403e049f1d5b27975fdc8651c4740b302680/qubes.Gpg.service#L3-L38
+# With minor modifications
+
+unit() {
+  case "$1" in
+    0s);;
+    1s) echo " 1 second";;
+    *s) echo " ${1%s} seconds";;
+    0m);;
+    1m) echo " 1 minute";;
+    *m) echo " ${1%m} minutes";;
+    0h);;
+    1h) echo " 1 hour";;
+    *h) echo " ${1%h} hours";;
+    0d);;
+    1d) echo " 1 day";;
+    *d) echo " ${1%d} days";;
+    esac
+}
+
+if [ -z "$QUBES_GPG_AUTOACCEPT" ]; then
+  QUBES_GPG_AUTOACCEPT=300
+fi
+
+days="$(( $QUBES_GPG_AUTOACCEPT / (3600*24) ))d"
+hours="$(( ( $QUBES_GPG_AUTOACCEPT % (3600*24) ) / 3600 ))h"
+minutes="$(( ( $QUBES_GPG_AUTOACCEPT % 3600 ) / 60 ))m"
+seconds="$(( $QUBES_GPG_AUTOACCEPT % 60 ))s"
+
+stat_file="/var/run/qubes-gpg-split/stat.$QREXEC_REMOTE_DOMAIN"
+stat_time=$(stat -c %Y "$stat_file" 2>/dev/null || echo 0)
+now=$(date +%s)
+if [ $(($stat_time + $QUBES_GPG_AUTOACCEPT)) -lt "$now" ]; then
+  echo "$USER" | /etc/qubes-rpc/qubes.WaitForSession >/dev/null 2>/dev/null
+  # This has been modified to say "SSH" instead of "GPG"
+  msg_text="Do you allow VM '$QREXEC_REMOTE_DOMAIN' to access your SSH keys"
+  msg_text="$msg_text\n(now and for the following $(unit $days)$(unit $hours)$(unit $minutes)$(unit $seconds))?"
+  zenity --question --no-wrap --text "$msg_text" 2>/dev/null </dev/null >/dev/null || exit 1
+  touch "$stat_file"
+fi
+
+# Add in our snippet to forward the inbound connection to the running SSH agent
+export SSH_AUTH_SOCK="/run/user/`id -u`/gnupg/S.gpg-agent.ssh"
+test -S "$SSH_AUTH_SOCK"
+notify-send -t 5000 "[$(qubesdb-read /name)] SSH access from: $QREXEC_REMOTE_DOMAIN"
+socat - "UNIX-CONNECT:$SSH_AUTH_SOCK"
+```
 
 ### A remote password store
 
@@ -278,9 +326,9 @@ qrexec-client-vm vault pass.GetPassword github.com
 
 We can design a shell script to automatically link these components together
 and copy the password to the keyboard, by making use of the `clip` function in
-`/usr/bin/pass`, which I won't include in my snippet for licensing reasons.
+`/usr/bin/pass`:
 
-```sh
+```bash
 #!/usr/bin/env bash
 # $HOME/bin/passmenu
 
@@ -289,8 +337,37 @@ X_SELECTION="${PASSWORD_STORE_X_SELECTION:-clipboard}"
 CLIP_TIME="${PASSWORD_STORE_CLIP_TIME:-45}"
 QUBE="${QUBES_PASS_DOMAIN:-$QUBES_GPG_DOMAIN}"
 
-# Omitted: `clip` snippet
+clip() {
+  # Source: https://git.zx2c4.com/password-store/tree/src/password-store.sh#n157
+  # License: https://git.zx2c4.com/password-store/tree/COPYING
+  # This base64 business is because bash cannot store binary data in a shell
+  # variable. Specifically, it cannot store nulls nor (non-trivally) store
+  # trailing new lines.
+  local sleep_argv0="password store sleep on display $DISPLAY"
+  pkill -f "^$sleep_argv0" 2>/dev/null && sleep 0.5
+  local before="$(xclip -o -selection "$X_SELECTION" 2>/dev/null | $BASE64)"
+  echo -n "$1" | xclip -selection "$X_SELECTION" || die "Error: Could not copy data to the clipboard"
+  (
+    ( exec -a "$sleep_argv0" bash <<<"trap 'kill %1' TERM; sleep '$CLIP_TIME' & wait" )
+    local now="$(xclip -o -selection "$X_SELECTION" | $BASE64)"
+    [[ $now != $(echo -n "$1" | $BASE64) ]] && before="$now"
+
+    # It might be nice to programatically check to see if klipper exists,
+    # as well as checking for other common clipboard managers. But for now,
+    # this works fine -- if qdbus isn't there or if klipper isn't running,
+    # this essentially becomes a no-op.
+    #
+    # Clipboard managers frequently write their history out in plaintext,
+    # so we axe it here:
+    qdbus org.kde.klipper /klipper org.kde.klipper.klipper.clearClipboardHistory &>/dev/null
+
+    echo "$before" | $BASE64 -d | xclip -selection "$X_SELECTION"
+  ) >/dev/null 2>&1 & disown
+  echo "Copied $2 to clipboard. Will clear in $CLIP_TIME seconds."
+}
 
 password_name="$(qrexec-client-vm $QUBE pass.ListPasswords | dmenu)"
 clip "$(qrexec-client-vm $QUBE pass.GetPassword <<<"$password_name")" "$password_name"
 ```
+
+[qubes-gpg-client-source]: https://github.com/QubesOS/qubes-app-linux-split-gpg/blob/fa04403e049f1d5b27975fdc8651c4740b302680/gpg-client-wrapper#L159-L163
