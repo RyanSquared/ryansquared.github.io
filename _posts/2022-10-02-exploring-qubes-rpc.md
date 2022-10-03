@@ -264,9 +264,9 @@ command:
 #!/bin/sh
 # /etc/qubes-rpc/pass.GetPassword
 
-read password
-notify-send -t 5000 "[$(qubesdb-read /name)] Attempt to decrypt password from: $QREXEC_REMOTE_DOMAIN" "Password: $password"
-pass show "$password" 2>/dev/null
+read password_name
+notify-send -t 5000 "[$(qubesdb-read /name)] Attempt to decrypt password from: $QREXEC_REMOTE_DOMAIN" "Password: $password_name"
+pass show "$password_name" 2>/dev/null
 ```
 
 Once the executable bit has been set, the TemplateVM has been shut down, and
@@ -291,6 +291,6 @@ QUBE="${QUBES_PASS_DOMAIN:-$QUBES_GPG_DOMAIN}"
 
 # Omitted: `clip` snippet
 
-password="$(qrexec-client-vm $QUBE pass.ListPasswords | dmenu)"
-clip "$(qrexec-client-vm $QUBE pass.GetPassword <<<"$password")" "$password"
+password_name="$(qrexec-client-vm $QUBE pass.ListPasswords | dmenu)"
+clip "$(qrexec-client-vm $QUBE pass.GetPassword <<<"$password_name")" "$password_name"
 ```
