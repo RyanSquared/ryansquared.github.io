@@ -100,7 +100,7 @@ The executable bit should be set for the command, which can be done by using
 shut down and the vault qube can be restarted to apply changes.
 
 We also need to make sure that `scdaemon` is installed, as it is not
-automatically installed in (at least) Qubes 4.1.1's Debian 11 tepmlate. This
+automatically installed in (at least) Qubes 4.1.1's Debian 11 template. This
 can be done by running `sudo apt install -y scdaemon` in the TemplateVM used by
 the vault qube.
 
