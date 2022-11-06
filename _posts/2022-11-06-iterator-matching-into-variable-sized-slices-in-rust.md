@@ -3,6 +3,20 @@ layout: post
 title: Iterator Matching into Variable Sized Slices in Rust
 date: 2022-11-06 04:00 -0500
 ---
+
+<style>
+:root {
+	--color-black: #1C1C1C;
+	--color-red: #AF5F5F;
+	--color-green: #5F875F;
+	--color-yellow: #87875F;
+	--color-blue: #5F87AF;
+	--color-purple: #5F5F87;
+	--color-cyan: #5F8787;
+	--color-gray: #6C6C6C;
+}
+</style>
+
 **Note:** My working title for this post is very long and _needs_ to be
 changed, but I haven't a clue what to change it to. Let's continue.
 
@@ -33,19 +47,19 @@ the data of the file and look at the hex representation of the color codes.
 ```sh
 # Redirect stderr to stdout so we can capture the text to output.txt
 cargo --color=always new --bin umbrella 2>&1 | sponge umbrella/output.txt
-xxd output.txt
+cat umbrella/output.txt
+xxd umbrella/output.txt
 ```
 
 <!--opaque-ansi-output source="output.txt"></opaque-ansi-output-->
 
-```
-     Created binary (application) `umbrella` package
+<pre><code><strong><span style="color: var(--color-green)">     Created</span></strong> binary (application) `umbrella` package
 00000000: 1b5b 306d 1b5b 306d 1b5b 316d 1b5b 3332  .[0m.[0m.[1m.[32
 00000010: 6d20 2020 2020 4372 6561 7465 641b 5b30  m     Created.[0
 00000020: 6d20 6269 6e61 7279 2028 6170 706c 6963  m binary (applic
 00000030: 6174 696f 6e29 2060 756d 6272 656c 6c61  ation) `umbrella
 00000040: 6020 7061 636b 6167 650a                 ` package.
-```
+</code></pre>
 
 We can see that the first character to be included is a `'\u{1b}'` character,
 followed by a `'['`. The first character, hereafter referred to as the "escape"
@@ -246,11 +260,6 @@ returning, first, the concatenated tags; second, the concatenated reversed list
 of tags. This way, they're closed in a "last tag created, first tag closed"
 fashion like HTML expects.
 
-Earlier in this project, we saw that `cargo new` would generate three separate
-sequences which could be reduced to a single instance. However, despite
-multiple sequences existing, tags are only generated once. This is because
-they're generated only when the text needs them.
-
 ## The `AnsiSequence::SetGraphicsMode` Variant
 
 Back when things were simpler, terminals only had access to a total of 32
@@ -327,7 +336,26 @@ We can actually run this code now and see that it does give a valid output:
 However, as previously mentioned, we must be able to take multiple sets of
 parameters. What happens if someone wants to reset the terminal, but also apply
 a color at the same time? Currently, we'll get a color reset, but that's it.
+This example command will run properly in our terminal:
 
+```sh
+echo -e '\e[0;32mHello\e[0;46mWorld\e[0m' | tee output.txt
+```
+
+<pre><code><span style="color: var(--color-green)">Hello</span><span style="background-color: var(--color-cyan)">World</span>
+</code></pre>
+
+But if we run this through our program, at its current stage, we get this:
+
+
+<pre><code><span style="color: var(--color-green)">Hello</span>World
+</code></pre>
+
+```html
+<span style="color: var(--color-green)">Hello</span>World
+```
+
+This is due to the fact we're only matching over one value in `input`. 
 Luckily, we can iterate through the slice, deciding to take extra parameters if
 needed by using the [`Iterator::next_chunk()`] method:
 
@@ -483,6 +511,15 @@ The significance of this code is, the input is _automatically_ incremented.
 There is no possible case where an infinite loop happens, and there's always an
 exit code. For future proofing, I've even added an option to skip over codes
 that I don't know about.
+
+We can run this code again and see that it now correctly formats the output:
+
+<pre><code><span style="color: var(--color-green)">Hello</span><span style="background-color: var(--color-cyan)">World</span>
+</code></pre>
+
+```html
+<span style="color: var(--color-green)">Hello</span><span style="background-color: var(--color-cyan)">World</span>
+```
 
 I hope that `iter_over!` isn't useful for that long, and that `next_chunk()`
 gets stabilized soon, but until then, I think it's a pretty nifty macro.
