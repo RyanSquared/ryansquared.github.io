@@ -355,7 +355,8 @@ But if we run this through our program, at its current stage, we get this:
 <span style="color: var(--color-green)">Hello</span>World
 ```
 
-This is due to the fact we're only matching over one value in `input`. 
+This is due to the fact we're only matching over one value in `input`.  In this
+case, we are only detecting the reset character, not the character after it.
 Luckily, we can iterate through the slice, deciding to take extra parameters if
 needed by using the [`Iterator::next_chunk()`] method:
 
