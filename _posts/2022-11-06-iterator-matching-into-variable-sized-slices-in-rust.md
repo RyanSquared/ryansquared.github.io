@@ -1,24 +1,8 @@
 ---
 layout: post
 title: Iterator Matching into Variable Sized Slices in Rust
-date: 2022-11-06 04:00 -0500
+date: 2022-11-05T04:00:00-05:00
 ---
-
-<style>
-:root {
-	--color-black: #1C1C1C;
-	--color-red: #AF5F5F;
-	--color-green: #5F875F;
-	--color-yellow: #87875F;
-	--color-blue: #5F87AF;
-	--color-purple: #5F5F87;
-	--color-cyan: #5F8787;
-	--color-gray: #6C6C6C;
-}
-</style>
-
-**Note:** My working title for this post is very long and _needs_ to be
-changed, but I haven't a clue what to change it to. Let's continue.
 
 For the rewrite of my blog engine, I had a thought: a lot of work has gone into
 making programs print nice and pretty things into my terminal, but there's no
@@ -51,15 +35,7 @@ cat umbrella/output.txt
 xxd umbrella/output.txt
 ```
 
-<!--opaque-ansi-output source="output.txt"></opaque-ansi-output-->
-
-<pre><code><strong><span style="color: var(--color-green)">     Created</span></strong> binary (application) `umbrella` package
-00000000: 1b5b 306d 1b5b 306d 1b5b 316d 1b5b 3332  .[0m.[0m.[1m.[32
-00000010: 6d20 2020 2020 4372 6561 7465 641b 5b30  m     Created.[0
-00000020: 6d20 6269 6e61 7279 2028 6170 706c 6963  m binary (applic
-00000030: 6174 696f 6e29 2060 756d 6272 656c 6c61  ation) `umbrella
-00000040: 6020 7061 636b 6167 650a                 ` package.
-</code></pre>
+<opaque-ansi-output source="output.txt" relative></opaque-ansi-output>
 
 We can see that the first character to be included is a `'\u{1b}'` character,
 followed by a `'['`. The first character, hereafter referred to as the "escape"
@@ -342,14 +318,11 @@ This example command will run properly in our terminal:
 echo -e '\e[0;32mHello\e[0;46mWorld\e[0m' | tee output.txt
 ```
 
-<pre><code><span style="color: var(--color-green)">Hello</span><span style="background-color: var(--color-cyan)">World</span>
-</code></pre>
+<opaque-ansi-output source="output-echo-multiple-chained.txt" relative></opaque-ansi-output>
 
 But if we run this through our program, at its current stage, we get this:
 
-
-<pre><code><span style="color: var(--color-green)">Hello</span>World
-</code></pre>
+<opaque-ansi-output source="output-echo-multiple-chained-fail.txt" relative></opaque-ansi-output>
 
 ```html
 <span style="color: var(--color-green)">Hello</span>World
@@ -374,23 +347,16 @@ while let Some(code) = iter.next() {
         38 => {
             if let Ok([_, n]) = iter.next_chunk() {
                 //                   ^^^^^^^^^^
-                state.color = SgrColor::ExpandedConsole(&n),
+                state.color = SgrColor::ExpandedConsole(*n);
             }
         }
+    }
+}
 ```
 
 ... Wait, what's that red squiggly line in my editor?
 
-```
-% cargo check
-error[E0658]: use of unstable library feature 'iter_next_chunk': recently added
-  --> src/main.rs:46:46
-   |
-46 |                     if let Ok([_, n]) = iter.next_chunk() {
-   |                                              ^^^^^^^^^^
-   |
-   = note: see issue #98326 <https://github.com/rust-lang/rust/issues/98326> for more information
-```
+<opaque-ansi-output source="next-chunk-error.txt" relative></opaque-ansi-output>
 
 Ah. I guess not.
 
@@ -515,8 +481,7 @@ that I don't know about.
 
 We can run this code again and see that it now correctly formats the output:
 
-<pre><code><span style="color: var(--color-green)">Hello</span><span style="background-color: var(--color-cyan)">World</span>
-</code></pre>
+<opaque-ansi-output source="output-echo-multiple-chained.txt" relative></opaque-ansi-output>
 
 ```html
 <span style="color: var(--color-green)">Hello</span><span style="background-color: var(--color-cyan)">World</span>

@@ -2,7 +2,7 @@
 layout: post
 title: Target Audience
 tags: meta
-date: 2022-09-21 19:43 -0400
+date: 2022-09-21T19:43:00-0400
 ---
 ![empty park around a pond with autumn trees, clear water, stone retaining wall](/assets/images/2022/09/target-audience-hero.png)
 
