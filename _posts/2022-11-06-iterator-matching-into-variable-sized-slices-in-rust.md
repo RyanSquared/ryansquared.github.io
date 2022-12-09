@@ -1,6 +1,7 @@
 ---
 layout: post
 title: Iterator Matching into Variable Sized Slices in Rust
+tags: rust
 date: 2022-11-05T04:00:00-05:00
 ---
 
