@@ -1,0 +1,13 @@
+[package]
+name = "facility"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[workspace]
+
+[dependencies]
+color-eyre = "0.6.2"
+serde = { version = "1.0.151", features = ["serde_derive"] }
+serde_json = "1.0.91"
+thiserror = "1.0.38"
