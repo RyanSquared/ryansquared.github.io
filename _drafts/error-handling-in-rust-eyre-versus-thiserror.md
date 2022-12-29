@@ -32,10 +32,20 @@ use color_eyre::{eyre::WrapErr, Result, Section};
 
 fn main() -> Result<()> {
     color_eyre::install()?;
+//  ^^^^^^^^^^^^^^^^^^^^^^
+//  Install the default panic and error report hooks. When a function panics,
+//  it calls a handler defined by this function. When the program returns with
+//  a Result::Err(Report), this handler also formats and display the Report.
+//  The `?` postfix operator handles the return value of `install()`, which is
+//  a Result; how this works is described later.
 
     let config_file = std::fs::read_to_string("config.json")
         .wrap_err("config file could not be read: config.json")
+//       ^^^^^^^^
+//       Convert a Result<T, E: StdError> into Result<T, Report>
         .suggestion("try copying the example config: `cp config.example.json config.json`")?;
+//       ^^^^^^^^^^
+//       Add a suggestion Section to the Report
 
     Ok(())
 }
@@ -94,8 +104,10 @@ use color_eyre::{Result, Section};
 use serde_json::Value;
 use thiserror::Error;
 
+// This derives from thiserror::Error and std's Debug trait
 #[derive(Error, Debug)]
 pub enum Error {
+
     #[error("config file could not be read: {0}")]
     Io(#[from] std::io::Error),
 
@@ -105,8 +117,18 @@ pub enum Error {
 
 fn load_config_from_file(config_file: impl AsRef<Path>) -> Result<Value, Error> {
     let file = File::open(config_file)?;
+    //         ^^^^^^^^^^^^^^^^^^^^^^^^
+    // This method returns a Result<T, std::io::Error>, so using the `?`
+    // postfix operator automatically calls the From<std::io::Error> impl for
+    // our Error in the event the function had an error.
+
     let reader = BufReader::new(file);
     let config = serde_json::from_reader(reader)?;
+    //           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    // This method returns a Result<T, serde_json::Error>, so using the `?`
+    // postfix operator automatically calls the From<serde_json::Error> impl
+    // for our Error in the event the function had an error.
+
     Ok(config)
 }
 
@@ -115,6 +137,12 @@ fn main() -> Result<()> {
 
     let config = load_config_from_file("config.json")
         .suggestion("try copying the example config: `cp config.example.json config.json`")?;
+//       ^^^^^^^^^^
+//       In this example, we build a suggestion Section directly off of an
+//       Error instead of a Report. Since `suggestion()` can be called on
+//       anything that is Display + Send + Sync, and the Section trait is
+//       implemented for anything that's Into<Report>, we can call it on nearly
+//       any error.
 
     println!("config: {config:?}");
 
