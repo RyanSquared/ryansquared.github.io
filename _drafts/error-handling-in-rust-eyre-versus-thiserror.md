@@ -120,7 +120,9 @@ fn load_config_from_file(config_file: impl AsRef<Path>) -> Result<Value, Error> 
     //         ^^^^^^^^^^^^^^^^^^^^^^^^
     // This method returns a Result<T, std::io::Error>, so using the `?`
     // postfix operator automatically calls the From<std::io::Error> impl for
-    // our Error in the event the function had an error.
+    // our Error in the event the function had an error. This implementation
+    // exists because we have a #[from] attribute in our Error for the given
+    // type, which thiserror can expand into a From implementation.
 
     let reader = BufReader::new(file);
     let config = serde_json::from_reader(reader)?;
